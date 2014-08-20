@@ -70,8 +70,8 @@ void FilterNode::capture()
 }
 
 /*********************| GuassianBlur class |*********************/
-static GLchar*	 hblurSrc = NULL;
-static GLchar*	 vblurSrc = NULL;
+extern GLchar*	 hblurSrc = NULL;
+extern GLchar*	 vblurSrc = NULL;
 static GaussianBlur* _scSizeBlurNode = NULL;
 
 GaussianBlur::GaussianBlur():f1(NULL), f2(NULL), _showing(false)
@@ -104,6 +104,24 @@ void GaussianBlur::do_free()
 	CC_SAFE_DELETE_ARRAY(hblurSrc);
 	CC_SAFE_DELETE_ARRAY(vblurSrc);
 	CC_SAFE_RELEASE_NULL(_scSizeBlurNode);
+}
+
+CCGLProgram*GaussianBlur::blurProgram(bool isV, GLfloat ratio, GLfloat hvsize)
+{
+	CCGLProgram* p = FilterNode::commonPrograme(isV ? vblurSrc : hblurSrc);
+	setBlurData(p, isV, ratio, hvsize);
+	return p;
+}
+
+void GaussianBlur::setBlurData(CCGLProgram* p, bool isV, GLfloat ratio, GLfloat hvsize)
+{
+	if (p) {
+		p->use();
+		GLint blurSLoc = glGetUniformLocation(p->getProgram(), "ratio");
+		p->setUniformLocationWith1f(blurSLoc, ratio);
+		blurSLoc = glGetUniformLocation(p->getProgram(), isV ? "vsize" : "hsize");
+		p->setUniformLocationWith1f(blurSLoc, hvsize);
+	}
 }
 
 GaussianBlur*GaussianBlur::create(CCNode* src, const CCSize& size)
@@ -164,21 +182,11 @@ bool GaussianBlur::init(CCNode* src, const CCSize& size, bool reused)
 
 void GaussianBlur::setBlurSize(const CCSize& size, const int which , GLfloat ratio)
 {
-	CCGLProgram* s = NULL;
-	GLint blurSLoc = 0;
 	if (!which || 1 == which) {
-		s = f1->getSprite()->getShaderProgram();
-		blurSLoc = glGetUniformLocation(s->getProgram(), "ratio");
-		s->setUniformLocationWith1f(blurSLoc, ratio);
-		blurSLoc = glGetUniformLocation(s->getProgram(), "hsize");
-		s->setUniformLocationWith1f(blurSLoc, (GLfloat)(size.width));
+		setBlurData(f1->getSprite()->getShaderProgram(), false, ratio, size.width);
 	}
 	if (!which || 2 == which) {
-		s = f2->getSprite()->getShaderProgram();
-		blurSLoc = glGetUniformLocation(s->getProgram(), "ratio");
-		s->setUniformLocationWith1f(blurSLoc, ratio);
-		blurSLoc = glGetUniformLocation(s->getProgram(), "vsize");
-		s->setUniformLocationWith1f(blurSLoc, (GLfloat)(size.height));
+		setBlurData(f2->getSprite()->getShaderProgram(), true, ratio, size.height);
 	}
 }
 

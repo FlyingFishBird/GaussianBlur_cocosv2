@@ -1,12 +1,6 @@
 #ifndef FILETERSPRITE_H
 #define FILETERSPRITE_H
 
-/**
- * Desc: 特效node
- * Auth: 张宇飞
- * Date: 2014-08-19    
- */
-
 #include "cocos2d.h"
 USING_NS_CC;
 
@@ -52,13 +46,13 @@ public:
 	}
 public:
 	bool 				init(CCNode* src, const CCSize& size);
-	/* set filter */
+	/* 设定filter */
 	inline void 			filter(CCGLProgram* shader) {
 		this->getSprite()->setShaderProgram(shader);
 	}
 	inline void			changeNode(CCNode* src) {_srcNode = src; capture();}
 
-	/* take a capture means do draw elements once 快照 */
+	/* 快照 */
 	void				capture();
 	UPCAP_FUNC(FilterNode, freshCapture)
 private:
@@ -69,11 +63,7 @@ private:
 };
 
 /**
- * @brief The GaussianBlur class use two FilterNode, one with horizontal blur and 
- * send result to next FilerNode with vertical blur .Then sencond result will show
- * as Gaussian blur effect
- * 中文:这个类用了两个FilterNode来实现高斯模糊。第一个用横向的模糊，结果作为第二个的
- * 输入进行纵向模糊，得到的结果就是需要的了。
+ * @brief The GaussianBlur class
  */
 class GaussianBlur : public CCNode, public FilterProto
 {
@@ -81,18 +71,17 @@ public:
 	GaussianBlur();
 	~GaussianBlur();
 public:
-	/* call this at global init time */
-	static bool			do_ready(); 
-	/* call this at global end time */
+	static bool			do_ready();
 	static void			do_free();
-
+	static CCGLProgram*		blurProgram(bool isV, GLfloat ratio, GLfloat hvsize);
+	static void			setBlurData(CCGLProgram* p, bool isV, GLfloat ratio, GLfloat hvsize);
 	static GaussianBlur*		create(CCNode* src, const CCSize& size);
 	inline static GaussianBlur*	create(CCNode* src) {
 		if (src) return create(src, src->getContentSize());
 		return NULL;
 	}
 	/**
-	 * @brief screenBlurNode get a blur node instance with screen size(中文:获取一个屏幕大小的模糊单例)
+	 * @brief screenBlurNode 获取一个屏幕大小的模糊单例
 	 */
 	static GaussianBlur*		screenBlurNodeInstance();
 public:
@@ -100,20 +89,20 @@ public:
 	/**
 	 * @brief setBlurSize 设置模糊程度
 	 * @param size 模糊范围
-	 * @param which 0 all , 1 horizontal blur, 2 vertical blur(中文:0横纵向同时模糊，1横向模糊设定，2纵向模糊设定）
+	 * @param which 0横纵向同时设置，1横向设置，2纵向设置
 	 * @param ratio 模糊半径
 	 */
 	void				setBlurSize(const CCSize& size, const int which = 0, GLfloat ratio = 3.0);
 	bool				reset(CCNode* src);
 	void				cleanFromWorld();
-	/* @brief show try use runningScene()->addChild to show this(中文:尝试用getRunningScene()->addChild来显示当前节点 */
 	void				show();
+	/* 快照 */
 	void				capture();
 	UPCAP_FUNC(GaussianBlur, freshCapture)
 private:
 	void				freshCapture(float dt) { capture();}
 private:
-	FilterNode			*f1, *f2;
+	FilterNode		*f1, *f2;
 	bool				_showing;
 };
 
