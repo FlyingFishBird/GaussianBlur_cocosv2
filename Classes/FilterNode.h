@@ -84,6 +84,7 @@ public:
 	 * @brief screenBlurNode 获取一个屏幕大小的模糊单例
 	 */
 	static GaussianBlur*		screenBlurNodeInstance();
+	static GaussianBlur*		takeScreenCapture();
 public:
 	bool 				init(CCNode* src, const CCSize& size, bool reused = false);
 	/**

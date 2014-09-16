@@ -146,6 +146,20 @@ GaussianBlur*GaussianBlur::screenBlurNodeInstance()
 	return _scSizeBlurNode;
 }
 
+GaussianBlur* GaussianBlur::takeScreenCapture()
+{
+	GaussianBlur* n = screenBlurNodeInstance();
+	CCNode* s = CCDirector::sharedDirector()->getRunningScene();
+	if (s) {
+		CCPoint a = s->getAnchorPoint();
+		s->setAnchorPoint(CCPointZero);
+		n->reset(s);
+		s->setAnchorPoint(a);
+		return n;
+	}
+	return NULL;
+}
+
 bool GaussianBlur::init(CCNode* src, const CCSize& size, bool reused)
 {
 	bool bRet = false;
