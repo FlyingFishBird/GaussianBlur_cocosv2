@@ -53,7 +53,6 @@ bool HelloWorld::init()
 	this->addChild(pMenu, 1);
 
 	// show filter node
-	GaussianBlur::do_ready();
 	this->setAnchorPoint(CCPointZero);
 	fnode = GaussianBlur::screenBlurNodeInstance();
 	fnode->reset(this);
@@ -68,7 +67,6 @@ bool HelloWorld::init()
 
 void HelloWorld::menuCloseCallback(CCObject* pSender)
 {
-	GaussianBlur::do_free();
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT) || (CC_TARGET_PLATFORM == CC_PLATFORM_WP8)
 	CCMessageBox("You pressed the close button. Windows Store Apps do not implement a close button.","Alert");
 #else

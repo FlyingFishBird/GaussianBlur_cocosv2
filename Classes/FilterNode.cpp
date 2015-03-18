@@ -1,18 +1,65 @@
-#include "FilterNode.h"
+﻿#include "FilterNode.h"
 #include "cocos-ext.h"
+static const char* shader_res[2] = {
+	"#ifdef GL_ES\n"
+	"precision mediump float;\n"
+	"#endif \n"
+	"uniform sampler2D u_texture; \n"
+	"varying vec2 v_texCoord;\n"
+	"uniform float ratio; \n"
+	"uniform float hsize;\n"
+	"void main(void)  \n"
+	"{  \n"
+		"vec4 sum = vec4(0.0);  \n"
+		"float blurSize = ratio / hsize; \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x - 4.0 * blurSize, v_texCoord.y)) *  1.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x - 3.0 * blurSize, v_texCoord.y)) *  2.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x - 2.0 * blurSize, v_texCoord.y)) *  3.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x -   blurSize, v_texCoord.y)) * 10.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x , v_texCoord.y)) * 15.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x +  blurSize, v_texCoord.y)) * 10.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x + 2.0 * blurSize, v_texCoord.y)) *  3.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x + 3.0 * blurSize, v_texCoord.y)) *  2.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x + 4.0 * blurSize, v_texCoord.y)) *  1.0/47.0;  \n"
+		"gl_FragColor = sum;  \n"
+	"}\n",
+	"#ifdef GL_ES\n"
+	"precision mediump float;\n"
+	"#endif\n"
+	"uniform sampler2D u_texture;\n"
+	"varying vec2 v_texCoord;\n"
+	"uniform float ratio; \n"
+	"uniform float vsize;\n"
+	"void main(void)  \n"
+	"{   \n"
+		"vec4 sum = vec4(0.0);  \n"
+		"float blurSize = ratio / vsize;\n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y - 4.0 * blurSize)) *  1.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y - 3.0 * blurSize)) *  2.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y - 2.0 * blurSize)) *  3.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y -       blurSize)) * 10.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y  )) * 15.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y +       blurSize)) * 10.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y + 2.0 * blurSize)) *  3.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y + 3.0 * blurSize)) *  2.0/47.0;  \n"
+		"sum += texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y + 4.0 * blurSize)) *  1.0/47.0;  \n"
+		"gl_FragColor = sum;  \n"
+	"}\n"
+};
 
+/*********************| FilterNode Classes |*********************/
 FilterNode::FilterNode():_srcNode(NULL)
 { }
 
 FilterNode::~FilterNode()
-{
-	CCLog("------------");
-}
+{ }
 
-CCGLProgram* FilterNode::commonPrograme(const GLchar* src)
+CCGLProgram* FilterNode::commonPrograme(const char* key, const GLchar* src)
 {
-	CCGLProgram* pp = new CCGLProgram();
-	if (pp) {
+	CCGLProgram* pp = CCShaderCache::sharedShaderCache()->programForKey(key);
+	if (!pp) {
+		pp = new CCGLProgram();
+		CCShaderCache::sharedShaderCache()->addProgram(pp, key);
 		pp->initWithVertexShaderByteArray(ccPositionTextureColor_vert, src);
 		pp->addAttribute(kCCAttributeNamePosition, kCCVertexAttrib_Position);
 		pp->addAttribute(kCCAttributeNameColor, kCCVertexAttrib_Color);
@@ -56,7 +103,7 @@ bool FilterNode::init(CCNode* src, const CCSize& size)
 
 void FilterNode::capture()
 {
-	if (!_srcNode){ return; }
+	if (!_srcNode) return;
 	CCPoint pos = _srcNode->getPosition();
 	CCPoint ar = _srcNode->getAnchorPoint();
 	_pos = ccpSub(pos, _pos);
@@ -83,32 +130,9 @@ GaussianBlur::~GaussianBlur()
 	CC_SAFE_RELEASE_NULL(f2);
 }
 
-bool GaussianBlur::do_ready()
-{
-	unsigned long l = 0;
-	unsigned char* data = NULL;
-	if (!hblurSrc) {
-    		hblurSrc = (GLchar*)CCFileUtils::sharedFileUtils()->getFileData("shaders/hblur.fsh", "rb", &l);
-		hblurSrc[l] = 0;
-	}
-	if (!vblurSrc) {
-    		vblurSrc = (GLchar*)CCFileUtils::sharedFileUtils()->getFileData("shaders/vblur.fsh", "rb", &l);
-		vblurSrc[l] = 0;
-	}
-	screenBlurNodeInstance();
-	return hblurSrc && vblurSrc;
-}
-
-void GaussianBlur::do_free()
-{
-	CC_SAFE_DELETE_ARRAY(hblurSrc);
-	CC_SAFE_DELETE_ARRAY(vblurSrc);
-	CC_SAFE_RELEASE_NULL(_scSizeBlurNode);
-}
-
 CCGLProgram*GaussianBlur::blurProgram(bool isV, GLfloat ratio, GLfloat hvsize)
 {
-	CCGLProgram* p = FilterNode::commonPrograme(isV ? vblurSrc : hblurSrc);
+	CCGLProgram* p = FilterNode::commonPrograme(isV ? "vBlur" : "hBlur", shader_res[isV ? : 1 : 0]);
 	setBlurData(p, isV, ratio, hvsize);
 	return p;
 }
@@ -168,7 +192,7 @@ bool GaussianBlur::init(CCNode* src, const CCSize& size, bool reused)
 		f1 = FilterNode::create(src, size);
 		CC_BREAK_IF(!f1);
 		f1->retain();
-		CCGLProgram* s = FilterNode::commonPrograme(hblurSrc);
+		CCGLProgram* s = FilterNode::commonPrograme("hBlur", shader_res[0]);
 		f1->filter(s);
 		setBlurSize(size, 1);
 		f1->capture();
@@ -176,7 +200,7 @@ bool GaussianBlur::init(CCNode* src, const CCSize& size, bool reused)
 
 		f2 = FilterNode::create(f1->getSprite(), size);
 		CC_BREAK_IF(!f2);
-		s = FilterNode::commonPrograme(vblurSrc);
+		s = FilterNode::commonPrograme("vBlur", shader_res[1]);
 		f2->filter(s);
 		setBlurSize(size, 2);
 		f2->retain();

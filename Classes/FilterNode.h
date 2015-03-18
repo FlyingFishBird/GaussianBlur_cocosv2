@@ -1,4 +1,4 @@
-#ifndef FILETERSPRITE_H
+﻿#ifndef FILETERSPRITE_H
 #define FILETERSPRITE_H
 
 #include "cocos2d.h"
@@ -38,7 +38,7 @@ public:
 	FilterNode();
 	~FilterNode();
 public:
-	static CCGLProgram*		commonPrograme(const GLchar* src);
+	static CCGLProgram*		commonPrograme(const char* key, const GLchar* src);
 	static FilterNode*		create(CCNode* src, const CCSize& size);
 	inline static FilterNode*	create(CCNode* src) {
 		if (src) return create(src, src->getContentSize());
@@ -71,8 +71,6 @@ public:
 	GaussianBlur();
 	~GaussianBlur();
 public:
-	static bool			do_ready();
-	static void			do_free();
 	static CCGLProgram*		blurProgram(bool isV, GLfloat ratio, GLfloat hvsize);
 	static void			setBlurData(CCGLProgram* p, bool isV, GLfloat ratio, GLfloat hvsize);
 	static GaussianBlur*		create(CCNode* src, const CCSize& size);
